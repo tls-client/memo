@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ニュース</title>
+</head>
+<body>
+<h1>ニュース</h1>
+<ul id="news"></ul>
+
+<script>
+const RSS = "https://www3.nhk.or.jp/rss/news/cat0.xml";
+const API = "https://api.allorigins.win/raw?url=" + encodeURIComponent(RSS);
+
+fetch(API)
+  .then(res => res.text())
+  .then(xml => {
+    const doc = new DOMParser().parseFromString(xml, "text/xml");
+    const items = doc.querySelectorAll("item");
+    const ul = document.getElementById("news");
+
+    items.forEach((item, i) => {
+      if (i >= 10) return;
+      const li = document.createElement("li");
+      const title = item.querySelector("title").textContent;
+      const link = item.querySelector("link").textContent;
+      li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
+      ul.appendChild(li);
+    });
+  });
+</script>
+</body>
+</html>
