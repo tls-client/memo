@@ -1,33 +1,339 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>ニュース</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ニュース情報収集ツール - Oxymoron</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .news-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .news-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .news-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .category-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .category-btn:hover,
+        .category-btn.active {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+        }
+        
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .news-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--shadow);
+        }
+        
+        .news-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: var(--border);
+        }
+        
+        .news-content {
+            padding: 20px;
+        }
+        
+        .news-source {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        
+        .news-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .news-description {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-btn:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ff6b6b;
+        }
+        
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .news-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .category-btn {
+                width: 200px;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-<h1>ニュース</h1>
-<ul id="news"></ul>
+    <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        ホームに戻る
+    </a>
 
-<script>
-const RSS = "https://www3.nhk.or.jp/rss/news/cat0.xml";
-const API = "https://api.allorigins.win/raw?url=" + encodeURIComponent(RSS);
+    <div class="news-container">
+        <div class="news-header">
+            <h1>ニュース情報収集ツール</h1>
+            <p>最新のニュースをカテゴリー別にまとめて表示</p>
+        </div>
 
-fetch(API)
-  .then(res => res.text())
-  .then(xml => {
-    const doc = new DOMParser().parseFromString(xml, "text/xml");
-    const items = doc.querySelectorAll("item");
-    const ul = document.getElementById("news");
+        <div class="news-controls">
+            <button class="category-btn active" data-category="all">すべて</button>
+            <button class="category-btn" data-category="technology">テクノロジー</button>
+            <button class="category-btn" data-category="business">ビジネス</button>
+            <button class="category-btn" data-category="entertainment">エンタメ</button>
+            <button class="category-btn" data-category="sports">スポーツ</button>
+            <button class="category-btn" data-category="health">健康</button>
+            <button class="category-btn" data-category="science">科学</button>
+        </div>
 
-    items.forEach((item, i) => {
-      if (i >= 10) return;
-      const li = document.createElement("li");
-      const title = item.querySelector("title").textContent;
-      const link = item.querySelector("link").textContent;
-      li.innerHTML = `<a href="${link}" target="_blank">${title}</a>`;
-      ul.appendChild(li);
-    });
-  });
-</script>
+        <div class="news-grid" id="newsGrid">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>ニュースを読み込み中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ニュースデータ（実際にはAPIから取得）
+        const newsData = [
+            {
+                id: 1,
+                title: "AI技術の最新動向：GPT-5の開発が進行中",
+                description: "OpenAIが次世代言語モデルGPT-5の開発を進めていることが明らかに。性能向上と安全性の両立が課題に。",
+                source: "Tech News",
+                category: "technology",
+                date: "2024-01-15",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=AI+News"
+            },
+            {
+                id: 2,
+                title: "新興企業への投資が過去最高を更新",
+                description: "2024年のスタートアップ投資額が前年比30%増となり、過去最高を記録。特にAIクリーンテック分野が人気。",
+                source: "Business Daily",
+                category: "business",
+                date: "2024-01-14",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=Business"
+            },
+            {
+                id: 3,
+                title: "人気アニメ映画が興行収入100億円突破",
+                description: "今冬公開のアニメ映画が記録的なヒット。国内外で高評価を得ており、続編制作も決定。",
+                source: "Entertainment Weekly",
+                category: "entertainment",
+                date: "2024-01-13",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=Entertainment"
+            },
+            {
+                id: 4,
+                title: "東京マラソン：新記録誕生の可能性",
+                description: "来月開催の東京マラソンで世界新記録の可能性。エリートランナーたちの準備が整う。",
+                source: "Sports Japan",
+                category: "sports",
+                date: "2024-01-12",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=Sports"
+            },
+            {
+                id: 5,
+                title: "新しい健康法：瞑想の効果が科学的に証明",
+                description: "最新研究により、日常的な瞑想がストレス軽減と集中力向上に効果があることが確認。",
+                source: "Health Magazine",
+                category: "health",
+                date: "2024-01-11",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=Health"
+            },
+            {
+                id: 6,
+                title: "火星探査機が新たな発見を報告",
+                description: "NASAの火星探査機が生命の痕跡と思われる有機分子を発見。火星探査の新時代へ。",
+                source: "Science Today",
+                category: "science",
+                date: "2024-01-10",
+                url: "#",
+                image: "https://via.placeholder.com/400x200/333/fff?text=Science"
+            }
+        ];
+
+        let currentCategory = 'all';
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderNews('all');
+            setupCategoryButtons();
+        });
+
+        // カテゴリーボタンの設定
+        function setupCategoryButtons() {
+            const buttons = document.querySelectorAll('.category-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentCategory = btn.dataset.category;
+                    renderNews(currentCategory);
+                });
+            });
+        }
+
+        // ニュースのレンダリング
+        function renderNews(category) {
+            const newsGrid = document.getElementById('newsGrid');
+            
+            // フィルタリング
+            const filteredNews = category === 'all' 
+                ? newsData 
+                : newsData.filter(news => news.category === category);
+
+            if (filteredNews.length === 0) {
+                newsGrid.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>このカテゴリーのニュースが見つかりません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            newsGrid.innerHTML = filteredNews.map(news => `
+                <article class="news-card" onclick="openNews('${news.url}')">
+                    <img src="${news.image}" alt="${news.title}" class="news-image">
+                    <div class="news-content">
+                        <div class="news-source">${news.source}</div>
+                        <h3 class="news-title">${news.title}</h3>
+                        <p class="news-description">${news.description}</p>
+                        <div class="news-meta">
+                            <span class="news-date">${formatDate(news.date)}</span>
+                            <span class="news-category">${getCategoryName(news.category)}</span>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // ニュースを開く
+        function openNews(url) {
+            if (url === '#') {
+                alert('これはデモニュースです。実際のニュースサイトにリンクします。');
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        // 日付のフォーマット
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ja-JP');
+        }
+
+        // カテゴリー名の取得
+        function getCategoryName(category) {
+            const names = {
+                technology: 'テクノロジー',
+                business: 'ビジネス',
+                entertainment: 'エンタメ',
+                sports: 'スポーツ',
+                health: '健康',
+                science: '科学'
+            };
+            return names[category] || category;
+        }
+
+        // テーマ切り替え（メインページのテーマに合わせる）
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
 </body>
 </html>
