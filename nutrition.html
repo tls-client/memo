@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>栄養価計算</title>
+</head>
+<body>
+<h1>栄養価計算</h1>
+
+<input id="food" placeholder="食材名（ご飯/鶏むね肉）">
+<input id="grams" type="number" placeholder="g">
+<button onclick="calc()">計算</button>
+
+<pre id="out"></pre>
+
+<script>
+const FOODS = {
+  "ご飯": { cal: 1.68, protein: 0.025 },
+  "鶏むね肉": { cal: 1.20, protein: 0.23 }
+};
+
+function calc() {
+  const f = food.value;
+  const g = Number(grams.value);
+
+  if (!FOODS[f]) {
+    out.textContent = "不明な食材";
+    return;
+  }
+
+  out.textContent = `
+カロリー: ${(FOODS[f].cal * g).toFixed(1)} kcal
+タンパク質: ${(FOODS[f].protein * g).toFixed(1)} g
+`;
+}
+</script>
+</body>
+</html>
