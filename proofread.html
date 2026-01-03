@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章校正ツール - Oxymoron</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Base styles from main styles.css */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --accent: #333333;
+            --border: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --accent: #ffffff;
+            --border: #333333;
+            --shadow: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0;
+            padding: 0;
+        }
+
+        .proofread-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 20px 20px;
+        }
+        
+        .proofread-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .proofread-header h1 {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+        
+        .proofread-header p {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        
+        .proofread-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .input-section, .result-section {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 12px var(--shadow);
+            transition: all 0.3s ease;
+        }
+        
+        .input-section:hover, .result-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background-color: var(--accent);
+            border-radius: 2px;
+        }
+        
+        .text-input {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        
+        .text-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 12px 20px;
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .control-btn.secondary {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+        
+        .control-btn.secondary:hover {
+            background-color: var(--bg-secondary);
+            border-color: var(--accent);
+        }
+        
+        .result-text {
+            min-height: 300px;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        
+        .stats-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .issues-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .issue-item {
+            padding: 20px;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .issue-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .issue-type {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .issue-type.error {
+            background-color: #ff6b6b;
+        }
+        
+        .issue-type.warning {
+            background-color: #ffa500;
+        }
+        
+        .issue-type.suggestion {
+            background-color: #4ecdc4;
+        }
+        
+        .issue-text {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .issue-suggestion {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-size: 13px;
+        }
+        
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            background-color: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 25px;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            font-weight: 500;
+        }
+        
+        .back-btn:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            transform: scale(1.05);
+        }
+        
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .suggestion-highlight {
+            background-color: #4ecdc4;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .loading i {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .proofread-container {
+                padding: 80px 15px 20px;
+            }
+            
+            .proofread-main {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .proofread-header h1 {
+                font-size: 24px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">
+        <i class="fas fa-arrow-left"></i>
+        ホームに戻る
+    </a>
+
+    <div class="proofread-container">
+        <div class="proofread-header">
+            <h1>文章校正ツール</h1>
+            <p>日本語の文章をチェックし、文法や表現の改善提案をします</p>
+        </div>
+
+        <div class="proofread-main">
+            <div class="input-section">
+                <h2 class="section-title">入力テキスト</h2>
+                <textarea 
+                    id="inputText" 
+                    class="text-input" 
+                    placeholder="ここに校正したい文章を入力してください...&#10;&#10;例：&#10;今日は良い天気ですね。公園を散歩しながら、新しいアイデアについて考えました。来週のプロジェクトについても色々と計画を立てています。"
+                ></textarea>
+                
+                <div class="controls">
+                    <button class="control-btn" onclick="proofreadText()">
+                        <i class="fas fa-check"></i> 校正する
+                    </button>
+                    <button class="control-btn secondary" onclick="clearText()">
+                        <i class="fas fa-trash"></i> クリア
+                    </button>
+                    <button class="control-btn secondary" onclick="loadSample()">
+                        <i class="fas fa-file-alt"></i> サンプル
+                    </button>
+                </div>
+            </div>
+
+            <div class="result-section">
+                <h2 class="section-title">校正結果</h2>
+                <div id="resultText" class="result-text">
+                    校正結果がここに表示されます...
+                </div>
+                
+                <div class="controls">
+                    <button class="control-btn secondary" onclick="copyResult()">
+                        <i class="fas fa-copy"></i> コピー
+                    </button>
+                    <button class="control-btn secondary" onclick="downloadResult()">
+                        <i class="fas fa-download"></i> ダウンロード
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <h2 class="section-title">文章統計</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="charCount">0</div>
+                    <div class="stat-label">文字数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="wordCount">0</div>
+                    <div class="stat-label">単語数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="sentenceCount">0</div>
+                    <div class="stat-label">文数</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="issueCount">0</div>
+                    <div class="stat-label">問題点</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="issues-container">
+            <h2 class="section-title">詳細な指摘</h2>
+            <div id="issuesList">
+                <p style="text-align: center; color: var(--text-secondary);">校正を実行すると詳細な指摘が表示されます</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentText = '';
+        let currentIssues = [];
+
+        // 簡易的な校正ルール
+        const proofreadRules = [
+            {
+                type: 'error',
+                pattern: /ですます/g,
+                message: '「ですます調」が混在しています',
+                suggestion: '文体を統一してください（「だ・である調」または「です・ます調」）'
+            },
+            {
+                type: 'warning',
+                pattern: /非常に|とても|すごく/g,
+                message: '強調表現が多すぎます',
+                suggestion: 'より具体的な表現を検討してください'
+            },
+            {
+                type: 'suggestion',
+                pattern: /そして|しかし|だから/g,
+                message: '接続詞の使用頻度が高いです',
+                suggestion: '文章の構造を見直すことをお勧めします'
+            },
+            {
+                type: 'error',
+                pattern: /[！！]{2,}|[？？]{2,}/g,
+                message: '記号の連続使用',
+                suggestion: '記号は1つずつ使用してください'
+            },
+            {
+                type: 'warning',
+                pattern: /.{50,}[、。]/g,
+                message: '文が長すぎます',
+                suggestion: '50文字以内に分割することを推奨します'
+            }
+        ];
+
+        // 校正実行
+        function proofreadText() {
+            const inputText = document.getElementById('inputText').value;
+            
+            if (!inputText.trim()) {
+                alert('テキストを入力してください');
+                return;
+            }
+            
+            currentText = inputText;
+            currentIssues = [];
+            
+            // ローディング表示
+            document.getElementById('resultText').innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>校正中...</p></div>';
+            
+            // 模擬的な処理時間
+            setTimeout(() => {
+                performProofread(inputText);
+            }, 1000);
+        }
+
+        // 校正処理
+        function performProofread(text) {
+            let correctedText = text;
+            const issues = [];
+            
+            // 各ルールを適用
+            proofreadRules.forEach(rule => {
+                const matches = text.match(rule.pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        const position = text.indexOf(match);
+                        issues.push({
+                            type: rule.type,
+                            message: rule.message,
+                            suggestion: rule.suggestion,
+                            position: position,
+                            text: match
+                        });
+                    });
+                }
+            });
+            
+            // 簡易的な修正
+            correctedText = correctedText
+                .replace(/[！！]{2,}/g, '！')
+                .replace(/[？？]{2,}/g, '？')
+                .replace(/非常に/g, '大変')
+                .replace(/とても/g, '非常に');
+            
+            currentIssues = issues;
+            
+            // 結果表示
+            displayResults(correctedText, issues);
+            updateStats(text, issues);
+        }
+
+        // 結果表示
+        function displayResults(correctedText, issues) {
+            const resultDiv = document.getElementById('resultText');
+            
+            if (issues.length === 0) {
+                resultDiv.innerHTML = `
+                    <div style="color: #4ecdc4; font-weight: bold; margin-bottom: 10px;">
+                        <i class="fas fa-check-circle"></i> 特に問題は見つかりませんでした
+                    </div>
+                    ${correctedText}
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div style="color: #ffa500; font-weight: bold; margin-bottom: 10px;">
+                        <i class="fas fa-exclamation-triangle"></i> ${issues.length}件の問題点が見つかりました
+                    </div>
+                    ${correctedText}
+                `;
+            }
+            
+            // 詳細な指摘を表示
+            displayIssues(issues);
+        }
+
+        // 詳細な指摘表示
+        function displayIssues(issues) {
+            const issuesList = document.getElementById('issuesList');
+            
+            if (issues.length === 0) {
+                issuesList.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">特に問題は見つかりませんでした</p>';
+                return;
+            }
+            
+            issuesList.innerHTML = issues.map((issue, index) => `
+                <div class="issue-item">
+                    <div class="issue-header">
+                        <span class="issue-type ${issue.type}">${getTypeLabel(issue.type)}</span>
+                        <span>位置: ${issue.position}</span>
+                    </div>
+                    <div class="issue-text">
+                        <strong>問題:</strong> "${issue.text}" - ${issue.message}
+                    </div>
+                    <div class="issue-suggestion">
+                        <strong>提案:</strong> ${issue.suggestion}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // タイプリベル取得
+        function getTypeLabel(type) {
+            const labels = {
+                error: 'エラー',
+                warning: '警告',
+                suggestion: '提案'
+            };
+            return labels[type] || type;
+        }
+
+        // 統計情報更新
+        function updateStats(text, issues) {
+            const charCount = text.length;
+            const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+            const sentenceCount = text.split(/[。！？]/).filter(s => s.trim().length > 0).length;
+            const issueCount = issues.length;
+            
+            document.getElementById('charCount').textContent = charCount;
+            document.getElementById('wordCount').textContent = wordCount;
+            document.getElementById('sentenceCount').textContent = sentenceCount;
+            document.getElementById('issueCount').textContent = issueCount;
+        }
+
+        // テキストクリア
+        function clearText() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('resultText').innerHTML = '校正結果がここに表示されます...';
+            document.getElementById('issuesList').innerHTML = '<p style="text-align: center; color: var(--text-secondary);">校正を実行すると詳細な指摘が表示されます</p>';
+            
+            // 統計をリセット
+            document.getElementById('charCount').textContent = '0';
+            document.getElementById('wordCount').textContent = '0';
+            document.getElementById('sentenceCount').textContent = '0';
+            document.getElementById('issueCount').textContent = '0';
+        }
+
+        // サンプルテキスト読み込み
+        function loadSample() {
+            const sampleText = `今日はとても良い天気ですね。
+そして、公園を散歩しながら、新しいアイデアについて考えました。
+非常に興味深い発想がたくさん浮かんできました！！
+来週のプロジェクトについても色々と計画を立てています。
+しかし、まだまだ考えるべきことがたくさんあります。
+だから、もっと時間を使ってしっかりと準備をしたいと思います。`;
+            
+            document.getElementById('inputText').value = sampleText;
+        }
+
+        // 結果コピー
+        function copyResult() {
+            const resultText = document.getElementById('resultText').textContent;
+            
+            if (resultText && resultText !== '校正結果がここに表示されます...') {
+                navigator.clipboard.writeText(resultText).then(() => {
+                    alert('校正結果をクリップボードにコピーしました');
+                }).catch(() => {
+                    alert('コピーに失敗しました');
+                });
+            } else {
+                alert('コピーする結果がありません');
+            }
+        }
+
+        // 結果ダウンロード
+        function downloadResult() {
+            const resultText = document.getElementById('resultText').textContent;
+            
+            if (resultText && resultText !== '校正結果がここに表示されます...') {
+                const blob = new Blob([resultText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'proofread_result.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                alert('ダウンロードする結果がありません');
+            }
+        }
+
+        // テーマ切り替え
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // Enterキーで校正（Ctrl+Enter）
+        document.getElementById('inputText').addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                proofreadText();
+            }
+        });
+
+        // リアルタイム文字数カウント
+        document.getElementById('inputText').addEventListener('input', (e) => {
+            const text = e.target.value;
+            const charCount = text.length;
+            document.getElementById('charCount').textContent = charCount;
+        });
+    </script>
+</body>
+</html>
